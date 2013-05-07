@@ -487,6 +487,7 @@ define(function (require, exports, module) {
     // Register commands as right click menu items
     commands = [TEST262TEST_CMD];
     CommandManager.register("Run test262 Test", TEST262TEST_CMD, runTest262Setup);
+    CommandManager.register("View Ecma Spec", VIEWSPEC_CMD, viewSpec);
 
     // Determine type of test for selected item in project
     $(projectMenu).on("beforeContextMenuOpen", function (evt) {
