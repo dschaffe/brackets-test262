@@ -34,6 +34,7 @@ define(function (require, exports, module) {
         ExtensionUtils      = brackets.getModule("utils/ExtensionUtils"),
         FileUtils           = brackets.getModule("file/FileUtils"),
         Menus               = brackets.getModule("command/Menus"),
+        NativeApp           = brackets.getModule("utils/NativeApp"),
         NativeFileSystem    = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
         NodeConnection      = brackets.getModule("utils/NodeConnection"),
         DocumentManager     = brackets.getModule("document/DocumentManager"),
@@ -45,6 +46,7 @@ define(function (require, exports, module) {
         COMMAND_ID          = "BracketsTest262.BracketsTest262",
         commands            = [],
         TEST262TEST_CMD     = "test262_cmd",
+        VIEWSPEC_CMD        = "viewspec_cmd",
         projectMenu         = Menus.getContextMenu(Menus.ContextMenuIds.PROJECT_MENU),
         workingsetMenu      = Menus.getContextMenu(Menus.ContextMenuIds.WORKING_SET_MENU),
         nodeConnection      = new NodeConnection(),
@@ -67,6 +69,39 @@ define(function (require, exports, module) {
             firstPromise.done(function () {
                 chain.apply(null, functions);
             });
+        }
+    }
+    function viewSpec() {
+        var test262url = "http://ecma-international.org/ecma-262/5.1/",
+            intl402url = "http://www.ecma-international.org/ecma-402/1.0/index.html",
+            entry = ProjectManager.getSelectedItem();
+        if (entry === undefined) {
+            entry = DocumentManager.getCurrentDocument().file;
+        }
+        var path = entry.fullPath,
+            dirpath = path,
+            section;
+        if (entry.isDirectory === false) {
+            dirpath = dirpath.substring(0, dirpath.lastIndexOf('/'));
+        } else if (dirpath[dirpath.length - 1] === '/') {
+            dirpath = dirpath.substring(0, dirpath.length - 1);
+        }
+        section = dirpath.substring(dirpath.lastIndexOf('/') + 1);
+        if (section.length > 2 && section.substring(0, 2) === 'ch') {
+            section = section.substring(2);
+            if (section[0] === '0') {
+                section = section.substring(1);
+            }
+        }
+        if (section.substring(section.length - 2) === '.0') {
+            section = section.substring(0, section.length - 2);
+        }
+        if (section === "bestPractice") {
+            NativeApp.openURLInDefaultBrowser(test262url);
+        } else if (dirpath.indexOf('intl402') > -1) {
+            NativeApp.openURLInDefaultBrowser(intl402url + "#sec-" + section);
+        } else {
+            NativeApp.openURLInDefaultBrowser(test262url + "#sec-" + section);
         }
     }
     function runTest262() {
@@ -218,11 +253,11 @@ define(function (require, exports, module) {
                     } else {
                         test262config = {};
                         console.log("[brackets-xunit]: " + moduledir + "/config.js commands property is not set");
-                        showError("xUnit test262 configuration", "Error: in file " + moduledir + "/config.js the 'commands' property is not set.");
+                        showError("Test262 configuration", "Error: in file " + moduledir + "/config.js the 'commands' property is not set.");
                     }
                 } catch (e) {
                     console.log("[brackets-xunit]: " + moduledir + "/config.js could not parse config info");
-                    showError("xUnit test262 configuration", "Error: file " + moduledir + "/config.js could not be parsed as JSON.");
+                    showError("Test262 configuration", "Error: file " + moduledir + "/config.js could not be parsed as JSON.");
                 }
             })
             .fail(function (error) {
@@ -443,14 +478,16 @@ define(function (require, exports, module) {
             promise.done(function (path) {
                 if (path !== undefined) {
                     menu.addMenuItem(TEST262TEST_CMD, "", Menus.LAST);
+                    menu.addMenuItem(VIEWSPEC_CMD, "", Menus.LAST);
                 }
             });
         }
     }
 
     // Register commands as right click menu items
-    commands = [TEST262TEST_CMD];
-    CommandManager.register("Run test262 xUnit Test", TEST262TEST_CMD, runTest262Setup);
+    commands = [TEST262TEST_CMD, VIEWSPEC_CMD];
+    CommandManager.register("Run Test262 Test", TEST262TEST_CMD, runTest262Setup);
+    CommandManager.register("View Ecma262 Spec", VIEWSPEC_CMD, viewSpec);
 
     // Determine type of test for selected item in project
     $(projectMenu).on("beforeContextMenuOpen", function (evt) {
