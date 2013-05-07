@@ -67,7 +67,7 @@
                 var result = _sessions[session.pid];
                 if (Number(new Date()) - result.lastSentTime > result.cacheTime) {
                     result.lastSentTime = Number(new Date());
-                    domainManager.emitEvent("process", "stdout", {pid: session.pid, data: result.cacheData + data});
+                    domainManager.emitEvent("processTest262", "stdout", {pid: session.pid, data: result.cacheData + data});
                     result.cacheData = '';
                 } else {
                     result.cacheData += data;
@@ -76,12 +76,12 @@
     
             session.stderr.setEncoding();
             session.stderr.on("data", function (data) {
-                domainManager.emitEvent("process", "stderr", {pid: session.pid, data: data});
+                domainManager.emitEvent("processTest262", "stderr", {pid: session.pid, data: data});
             });
     
             session.on("exit", function (code) {
                 var result = _sessions[session.pid];
-                domainManager.emitEvent("process", "exit", { pid : session.pid, exitcode : code, data: result.cacheData});
+                domainManager.emitEvent("processTest262", "exit", { pid : session.pid, exitcode : code, data: result.cacheData});
             });
     
         } catch (e) {
@@ -103,12 +103,12 @@
     function init(DomainManager) {
         domainManager = DomainManager;
 
-        if (!DomainManager.hasDomain("process")) {
-            DomainManager.registerDomain("process", {major: 0, minor: 1});
+        if (!DomainManager.hasDomain("processTest262")) {
+            DomainManager.registerDomain("processTest262", {major: 0, minor: 1});
         }
 
         DomainManager.registerCommand(
-            "process",         // domain name
+            "processTest262",         // domain name
             "spawnSession",    // command name
             spawnSession,      // command handler function
             false,              // this command is synchronous
@@ -131,7 +131,7 @@
 
         // command: process.killSession(pid)
         DomainManager.registerCommand(
-            "process",         // domain name
+            "processTest262",         // domain name
             "killSession",      // command name
             killSession,        // command handler function
             false,              // this command is synchronous
@@ -147,7 +147,7 @@
 
         // event: process.stdout
         DomainManager.registerEvent(
-            "process",
+            "processTest262",
             "stdout",
             [
                 {
@@ -164,7 +164,7 @@
         );
         // event: process.stderr
         DomainManager.registerEvent(
-            "process",
+            "processTest262",
             "stderr",
             [
                 {
@@ -181,7 +181,7 @@
         );
         // event: process.exit
         DomainManager.registerEvent(
-            "process",
+            "processTest262",
             "exit",
             [
                 {

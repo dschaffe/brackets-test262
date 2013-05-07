@@ -238,7 +238,7 @@ define(function (require, exports, module) {
             if (test262config[i].python !== undefined) {
                 python = test262config[i].python;
             }
-            nodeConnection.domains.process.spawnSession({executable: python, args: params, directory: base, env: env, shells: test262config[i], cacheTime: cacheTime}).done(spawned);
+            nodeConnection.domains.processTest262.spawnSession({executable: python, args: params, directory: base, env: env, shells: test262config[i], cacheTime: cacheTime}).done(spawned);
         }
         newWindow.focus();
     }
@@ -252,16 +252,16 @@ define(function (require, exports, module) {
                         runTest262();
                     } else {
                         test262config = {};
-                        console.log("[brackets-xunit]: " + moduledir + "/config.js commands property is not set");
+                        console.log("[brackets-test262]: " + moduledir + "/config.js commands property is not set");
                         showError("Test262 configuration", "Error: in file " + moduledir + "/config.js the 'commands' property is not set.");
                     }
                 } catch (e) {
-                    console.log("[brackets-xunit]: " + moduledir + "/config.js could not parse config info");
+                    console.log("[brackets-test262]: " + moduledir + "/config.js could not parse config info");
                     showError("Test262 configuration", "Error: file " + moduledir + "/config.js could not be parsed as JSON.");
                 }
             })
             .fail(function (error) {
-                console.log("[brackets-xunit]: could not load file " + moduledir + "/config.js");
+                console.log("[brackets-test262]: could not load file " + moduledir + "/config.js");
                 showError("Test262 Config", "Error: could not load file " + moduledir + "/config.js");
             });
     }
@@ -325,16 +325,16 @@ define(function (require, exports, module) {
         function connect() {
             var connectionPromise = nodeConnection.connect(true);
             connectionPromise.fail(function () {
-                console.error("[brackets-xunit] failed to connect to node");
+                console.error("[brackets-test262] failed to connect to node");
             });
             return connectionPromise;
         }
 
-        function loadProcessDomain() {
-            var path = ExtensionUtils.getModulePath(module, "node/ProcessDomain");
+        function loadProcessTest262Domain() {
+            var path = ExtensionUtils.getModulePath(module, "node/ProcessTest262Domain");
             var loadPromise = nodeConnection.loadDomains([path], true);
             loadPromise.fail(function () {
-                console.log("[brackets-xunit] failed to load process domain");
+                console.log("[brackets-test262] failed to load process domain");
             });
             return loadPromise;
         }
@@ -383,7 +383,7 @@ define(function (require, exports, module) {
             }
         }
             
-        $(nodeConnection).on("process.stdout", function (event, result) {
+        $(nodeConnection).on("processTest262.stdout", function (event, result) {
             var pid = result.pid,
                 data = result.data;
             data = data.replace(/\r\n/g, '<br>').replace(/\n/g, '<br>');
@@ -407,7 +407,7 @@ define(function (require, exports, module) {
             }
         });
                 
-        $(nodeConnection).on("process.stderr", function (event, result) {
+        $(nodeConnection).on("processTest262.stderr", function (event, result) {
             var pid = result.pid,
                 data = result.data;
             data = data.replace(/\r\n/g, '<br>').replace(/\n/g, '<br>');
@@ -425,7 +425,7 @@ define(function (require, exports, module) {
             }
         });
 
-        $(nodeConnection).on("process.exit", function (event, result) {
+        $(nodeConnection).on("processTest262.exit", function (event, result) {
             var pid = result.pid,
                 data = result.data;
             data = data.replace(/\n/g, '<br>');
@@ -444,11 +444,11 @@ define(function (require, exports, module) {
                 processOutput(pid, data);
             }
         });
-        chain(connect, loadProcessDomain);
+        chain(connect, loadProcessTest262Domain);
     });
     
     // determine if a file is a known test type
-    // first look for brackets-xunit: [type], takes precedence
+    // first look for brackets-test262: [type], takes precedence
     // next look for distinguishing clues in the file:
     //   YUI: 'YUI(' and 'Test.runner.test'
     //   jasmine: 'describe' and 'it'
@@ -457,7 +457,7 @@ define(function (require, exports, module) {
     //           ../tools/packaging/test262.py
     function determineFileType(fileEntry, text) {
         if (text && fileEntry && fileEntry.fullPath && fileEntry.fullPath.match(/\.js$/)) {
-            if (text.match(/brackets-xunit:\s*test262/i) !== null) {
+            if (text.match(/brackets-test262:\s*test262/i) !== null) {
                 return "test262";
             }
         } else {
@@ -485,9 +485,8 @@ define(function (require, exports, module) {
     }
 
     // Register commands as right click menu items
-    commands = [TEST262TEST_CMD, VIEWSPEC_CMD];
-    CommandManager.register("Run Test262 Test", TEST262TEST_CMD, runTest262Setup);
-    CommandManager.register("View Ecma262 Spec", VIEWSPEC_CMD, viewSpec);
+    commands = [TEST262TEST_CMD];
+    CommandManager.register("Run test262 Test", TEST262TEST_CMD, runTest262Setup);
 
     // Determine type of test for selected item in project
     $(projectMenu).on("beforeContextMenuOpen", function (evt) {
