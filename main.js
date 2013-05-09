@@ -51,6 +51,7 @@ define(function (require, exports, module) {
         workingsetMenu      = Menus.getContextMenu(Menus.ContextMenuIds.WORKING_SET_MENU),
         nodeConnection      = new NodeConnection(),
         test262config       = [],
+        scriptOptions       = "--full-summary",
         _windows            = {};
 
     // display a modal dialog when an error occurs
@@ -224,8 +225,9 @@ define(function (require, exports, module) {
             }
             entrypoint.appendChild(stderrsection);
         };
+        var scriptOptionsArr = scriptOptions.split(" ");
         for (i = 0; i < test262config.length; i++) {
-            params = [test262, "--full-summary", "--command", test262config[i].path, test];
+            params = [test262].concat(scriptOptionsArr).concat(["--command", test262config[i].path, test]);
             env = {};
             if (test262config[i].env !== undefined) {
                 env = test262config[i].env;
@@ -249,6 +251,9 @@ define(function (require, exports, module) {
                     config = JSON.parse(text);
                     if (config.hasOwnProperty("commands") && config.commands[0].name !== '<description>') {
                         test262config = config.commands;
+                        if (config.hasOwnProperty("script_options")) {
+                            scriptOptions = config.script_options;
+                        }
                         runTest262();
                     } else {
                         test262config = {};

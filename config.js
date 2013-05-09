@@ -1,4 +1,5 @@
 {
+    "brackets-xunit" : "disable",
     "commands_NOTES":[{"name":"<description>","path":"<path to js shell>",
                   "notes1":"To enable test262, rename the relevant section to commands and modify the settings to match your setup",
                   "notes2":"You can specify name,path for multiple shells and running tests will run on each shell.",
@@ -11,6 +12,7 @@
                   "cacheTime":15000,
                   "env":{"DYLD_FRAMEWORK_PATH":"/Users/dschaffe/workspace/jsc/WebKit/WebKitBuild/Release"}}
                ],
+    "script_options": "--full-summary",
     "commands_WIN":[
                  {"name":"V8","path":"Z:/workspace/builds/spidermonkey/windows/js.exe","python":"C:/Python27/python"}
                ]
