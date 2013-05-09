@@ -19,6 +19,17 @@ Installation
 
 Let me know if you have any suggestions or issues.  Contact me at: dschaffe@adobe.com.
 
+Implementation Notes
+====================
+- The config.js file may contain "script_options" : "settings".  The "settings" are arguments passed to the test262.py
+script.  For example setting: "script_options" : "--full-summary --loglevel=info" will pass in parameters to test262.py
+each invocation.
+
+Known Issues
+============
+- Brackets will complain if test262 files are in the current project.  The warning is "Error Indexing Files, The maximum
+number of files have been indexed. Actions that look up files in the index may function incorrectly."
+
 Change Log
 =========
 
