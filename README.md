@@ -24,6 +24,16 @@ Implementation Notes
 - The config.js file may contain "script_options" : "settings".  The "settings" are arguments passed to the test262.py
 script.  For example setting: "script_options" : "--full-summary --loglevel=info" will pass in parameters to test262.py
 each invocation.
+- In config.js muliple shells or shells with different runtime parameters may be specified and each test will run and
+compare the results
+- Selecting a test262 file or directory and right clicking to display the context menu will show the menu to run a test
+- Right clicking a test or directory and selecting View Specification will open your browser to the ecma 262 or ecma 402
+spec to the section relevant to the test 
+
+Future Enhancements
+===================
+- Allow an option to run test suite in the chrome browser (CEF)
+- Editing a test or creating a new test will update/generate a matching .json file for the browser version of the testsuite
 
 Known Issues
 ============
