@@ -18,7 +18,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING 
  * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER 
  * DEALINGS IN THE SOFTWARE.
- * 
+ *
  * brackets-test262 - a brackets extension to run the ecma test262 javascript test suite
  */
 
@@ -38,14 +38,14 @@ define(function (require, exports, module) {
         NativeFileSystem    = brackets.getModule("file/NativeFileSystem").NativeFileSystem,
         NodeConnection      = brackets.getModule("utils/NodeConnection"),
         DocumentManager     = brackets.getModule("document/DocumentManager"),
-        ProjectManager      = brackets.getModule("project/ProjectManager"),
-        FileViewController  = brackets.getModule("project/FileViewController");
+        ProjectManager      = brackets.getModule("project/ProjectManager");
     var moduledir           = FileUtils.getNativeModuleDirectoryPath(module),
         configEntry         = new NativeFileSystem.FileEntry(moduledir + '/config.js'),
         config              = {},
         COMMAND_ID          = "BracketsTest262.BracketsTest262",
         commands            = [],
         TEST262TEST_CMD     = "test262_cmd",
+        TEST262HTML_CMD     = "test262html_cmd",
         VIEWSPEC_CMD        = "viewspec_cmd",
         projectMenu         = Menus.getContextMenu(Menus.ContextMenuIds.PROJECT_MENU),
         workingsetMenu      = Menus.getContextMenu(Menus.ContextMenuIds.WORKING_SET_MENU),
@@ -240,9 +240,25 @@ define(function (require, exports, module) {
             if (test262config[i].python !== undefined) {
                 python = test262config[i].python;
             }
-            nodeConnection.domains.processTest262.spawnSession({executable: python, args: params, directory: base, env: env, shells: test262config[i], cacheTime: cacheTime}).done(spawned);
+            nodeConnection.domains.processTest262.spawnSession({executable: python, args: params, directory: base + '/tools/packaging', env: env, shells: test262config[i], cacheTime: cacheTime}).done(spawned);
         }
         newWindow.focus();
+    }
+    function runTest262Html() {
+        var entry = ProjectManager.getSelectedItem();
+        if (entry === undefined) {
+            entry = DocumentManager.getCurrentDocument().file;
+        }
+        var path = entry.fullPath,
+            relpath = path.substring(path.indexOf('/suite/') + 7),
+            base = path.substring(0, path.lastIndexOf('/test/')),
+            script = "./packager.py",
+            params = [script, '--files=' + relpath, 'ES5.1'];
+        console.log('cd ' + base + '/tools/packaging; python ' + params);
+        nodeConnection.domains.processTest262.spawnProcess({executable: "python", args: params, directory: base + '/tools/packaging'}).done(function (data) {
+            console.log("runTest262Html done");
+        });
+        
     }
     function runTest262Setup() {
         FileUtils.readAsText(configEntry)
@@ -387,7 +403,6 @@ define(function (require, exports, module) {
                 _windows[pid].window.document.getElementById("status" + pid).innerHTML = status;
             }
         }
-            
         $(nodeConnection).on("processTest262.stdout", function (event, result) {
             var pid = result.pid,
                 data = result.data;
@@ -449,6 +464,22 @@ define(function (require, exports, module) {
                 processOutput(pid, data);
             }
         });
+        $(nodeConnection).on("processTest262.exitProcess", function (event, result) {
+            var entry = ProjectManager.getSelectedItem();
+            if (entry === undefined) {
+                entry = DocumentManager.getCurrentDocument().file;
+            }
+            var path = entry.fullPath,
+                base = path.substring(0, path.lastIndexOf('/test/')),
+                website = base + '/website/default.html';
+            window.open(website);
+        });
+        $(nodeConnection).on("processTest262.stdoutProcess", function (event, result) {
+            console.log(result);
+        });
+        $(nodeConnection).on("processTest262.stderrProcess", function (event, result) {
+            console.log(result);
+        });
         chain(connect, loadProcessTest262Domain);
     });
     
@@ -483,6 +514,7 @@ define(function (require, exports, module) {
             promise.done(function (path) {
                 if (path !== undefined) {
                     menu.addMenuItem(TEST262TEST_CMD, "", Menus.LAST);
+                    menu.addMenuItem(TEST262HTML_CMD, "", Menus.LAST);
                     menu.addMenuItem(VIEWSPEC_CMD, "", Menus.LAST);
                 }
             });
@@ -490,8 +522,9 @@ define(function (require, exports, module) {
     }
 
     // Register commands as right click menu items
-    commands = [TEST262TEST_CMD, VIEWSPEC_CMD];
-    CommandManager.register("Run test262 Test", TEST262TEST_CMD, runTest262Setup);
+    commands = [TEST262TEST_CMD, TEST262HTML_CMD, VIEWSPEC_CMD];
+    CommandManager.register("Run test262 Shell", TEST262TEST_CMD, runTest262Setup);
+    CommandManager.register("Run test262 Html", TEST262HTML_CMD, runTest262Html);
     CommandManager.register("View Ecma Spec", VIEWSPEC_CMD, viewSpec);
 
     // Determine type of test for selected item in project
