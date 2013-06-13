@@ -33,6 +33,60 @@
         domainManager,
         cacheTimeDefault = 3000;  // minimum time in seconds to send stdout data through the process.stdout event
 
+    function spawnProcess(info) {
+        var command = info.executable,
+            parameters = info.args,
+            session,
+            errorMsg = '',
+            env;
+        try {
+            var directory = info.directory;
+            if (parameters === undefined) {
+                parameters = [];
+            }
+            if (env === undefined) {
+                env = {};
+            }
+            if (directory === undefined) {
+                directory = command.substring(0, command.lastIndexOf('/'));
+            }
+            directory = directory.replace(/\//g, path.sep);
+            var i;
+            for (i = 0; i < parameters.length; i++) {
+                parameters[i] = parameters[i].replace(/\//g, path.sep);
+            }
+            session = spawn(command, parameters, { cwd: directory, env: env });
+            _sessions[session.pid] = {session: session};
+            session.stdout.setEncoding();
+            session.stdout.on("data", function (data) {
+                var result = _sessions[session.pid];
+                if (Number(new Date()) - result.lastSentTime > result.cacheTime) {
+                    result.lastSentTime = Number(new Date());
+                    domainManager.emitEvent("processTest262", "stdoutProcess", {pid: session.pid, data: result.cacheData + data});
+                    result.cacheData = '';
+                } else {
+                    result.cacheData += data;
+                }
+            });
+
+            session.stderr.setEncoding();
+            session.stderr.on("data", function (data) {
+                domainManager.emitEvent("processTest262", "stderrProcess", {pid: session.pid, data: data});
+            });
+
+            session.on("exit", function (code) {
+                var result = _sessions[session.pid];
+                domainManager.emitEvent("processTest262", "exitProcess", { pid : session.pid, exitcode : code, data: result.cacheData});
+            });
+
+        } catch (e) {
+            errorMsg = e.message;
+        }
+        var cmds = [command];
+        cmds = cmds.concat(parameters);
+        return [session.pid, cmds, errorMsg];
+    }
+
     function spawnSession(info) {
         var command = info.executable,
             parameters = info.args,
@@ -129,6 +183,28 @@
             ]
         );
 
+        DomainManager.registerCommand(
+            "processTest262",         // domain name
+            "spawnProcess",    // command name
+            spawnProcess,      // command handler function
+            false,              // this command is synchronous
+            "Opens a new process",
+            [
+                {
+                    name: "initialDirectory",
+                    type: "string",
+                    description: "Initial directory path"
+                }
+            ],
+            [
+                {
+                    name: "session",
+                    type: "number",
+                    description: "session data"
+                }
+            ]
+        );
+
         // command: process.killSession(pid)
         DomainManager.registerCommand(
             "processTest262",         // domain name
@@ -183,6 +259,57 @@
         DomainManager.registerEvent(
             "processTest262",
             "exit",
+            [
+                {
+                    name: "pid",
+                    type: "number",
+                    description: "Shell PID"
+                },
+                {
+                    name: "result",
+                    type: "object",
+                    description: "exit code"
+                }
+            ]
+        );
+        // event: process.stdout
+        DomainManager.registerEvent(
+            "processTest262",
+            "stdoutProcess",
+            [
+                {
+                    name: "pid",
+                    type: "number",
+                    description: "Shell PID"
+                },
+                {
+                    name: "message",
+                    type: "string",
+                    description: "stdout message"
+                }
+            ]
+        );
+        // event: process.stderr
+        DomainManager.registerEvent(
+            "processTest262",
+            "stderrProcess",
+            [
+                {
+                    name: "pid",
+                    type: "number",
+                    description: "Shell PID"
+                },
+                {
+                    name: "message",
+                    type: "string",
+                    description: "stderr message"
+                }
+            ]
+        );
+        // event: process.exit
+        DomainManager.registerEvent(
+            "processTest262",
+            "exitProcess",
             [
                 {
                     name: "pid",
