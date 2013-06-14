@@ -240,7 +240,7 @@ define(function (require, exports, module) {
             if (test262config[i].python !== undefined) {
                 python = test262config[i].python;
             }
-            nodeConnection.domains.processTest262.spawnSession({executable: python, args: params, directory: base + '/tools/packaging', env: env, shells: test262config[i], cacheTime: cacheTime}).done(spawned);
+            nodeConnection.domains.processTest262.spawnSession({executable: python, args: params, directory: base, env: env, shells: test262config[i], cacheTime: cacheTime}).done(spawned);
         }
         newWindow.focus();
     }
